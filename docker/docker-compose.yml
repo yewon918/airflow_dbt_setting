@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  airflow-webserver:
+    build:
+      context: ../dockerfiles/airflow_dbt
+      dockerfile: Dockerfile
+    container_name: airflow-webserver
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__DATABASE__LOAD_DEFAULT_CONNECTIONS: "False"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/logs:/opt/airflow/logs
+      - ../airflow/plugins:/opt/airflow/plugins
+      - ../dbt:/opt/dbt
+      - ../dbt/profiles:/root/.dbt
+    command: >
+      bash -c "
+      airflow db init &&
+      airflow users create --username admin --password admin --firstname a --lastname a --role Admin --email admin@example.com &&
+      airflow webserver
+      "
+
+  airflow-scheduler:
+    build:
+      context: ../dockerfiles/airflow_dbt
+      dockerfile: Dockerfile
+    container_name: airflow-scheduler
+    restart: always
+    depends_on:
+      - postgres
+      - airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__DATABASE__LOAD_DEFAULT_CONNECTIONS: "False"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ../airflow/logs:/opt/airflow/logs
+      - ../airflow/plugins:/opt/airflow/plugins
+      - ../dbt:/opt/dbt
+      - ../dbt/profiles:/root/.dbt
+    command: >
+      bash -c "
+      airflow scheduler
+      "
+
+volumes:
+  postgres_data:
