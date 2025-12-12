@@ -99,5 +99,3 @@ pip-wheel-metadata/
 .eggs/
 build/
 dist/
-
-*.pem
