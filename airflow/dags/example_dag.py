@@ -1,20 +1,22 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.decorators import task
 from datetime import datetime
 
-def test_s3():
-    hook = S3Hook(aws_conn_id='s3_conn')
-    hook.load_string("Hello from Airflow", key="test/hello.txt", bucket_name="my-airflow-logs")
+with DAG(dag_id="get_price_GOOG",
+    start_date=datetime(2023, 6, 15),
+    schedule='@weekly',
+    catchup=True) as dag:
 
-with DAG(
-    dag_id="test_s3_dag",
-    start_date=datetime(2024, 1, 1),
-    schedule=None,
-    catchup=False,
-) as dag:
+    @task
+    def extract(symbol):
+        return symbol
 
-    PythonOperator(
-        task_id="write_to_s3",
-        python_callable=test_s3,
-    )
+    @task
+    def process(symbol):
+        return symbol
+
+    @task
+    def store(symbol):
+        return symbol
+
+    store(process(extract("GOOG")))
