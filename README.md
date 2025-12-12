@@ -3,6 +3,7 @@ Airflow, dbt 도커 컴포즈 환경 설정
 
 디렉토리 구조
 
+```
 project-root/
 │
 ├── docker/
@@ -26,3 +27,4 @@ project-root/
     │   │   └── staging
     │   └── dbt_project.yml
     └── profiles.yml
+```
