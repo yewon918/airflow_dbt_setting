@@ -13,7 +13,11 @@ RUN pip install --no-cache-dir \
 USER root
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends nano && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+    
 USER airflow
 
 ENV DBT_PROJECT_DIR=/opt/dbt/project
